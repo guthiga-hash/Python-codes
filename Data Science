@@ -1,0 +1,16 @@
+#import libaries
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+mydata=pd.read_excel('/content/traffic_data.xlsx.xlsx')
+day_data=mydata["Month"]
+traffic_data=mydata["Searches"]
+plt.figure(figsize=(14,7))
+plt.bar(day_data,traffic_data,label="Month against Searches",color='r')
+plt.xlabel("Month")
+plt.ylabel("Searches")
+plt.title("Month against Searches")
+plt.legend()
+plt.xticks(rotation=45,ha="right")
+plt.grid(False)
+plt.show()
