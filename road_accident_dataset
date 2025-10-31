@@ -1,0 +1,100 @@
+Author:Bendict Guthiga
+ADMNO:BSE-05-164/2024
+
+
+# 1. Import all the libraries we need
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn import metrics
+import joblib
+import pickle
+
+# 2. Load the Excel file containing the road accident data
+mydata = pd.read_excel('/content/road_accident_dataset.xlsx')
+
+# 3. Show the first few records so we can get a quick look at the data
+print("Preview of dataset:")
+print(mydata.head())
+
+# 4. Plot a simple graph showing how vehicle speed relates to accident severity
+x = mydata['vehicle_speed']
+y = mydata['accident_severity']
+
+plt.figure(figsize=(8,5))
+plt.plot(x, y, linestyle=':', color='r', marker='o', label='Accident Severity Trend')
+plt.title('Vehicle Speed vs Accident Severity', fontsize=14)
+plt.xlabel('Vehicle Speed (km/h)')
+plt.ylabel('Accident Severity Level')
+plt.legend()
+plt.show()
+
+# 5. Prepare the data for training the machine learning model
+X = mydata[['vehicle_speed']]  # Features must be in 2D format
+Y = mydata['accident_severity']
+
+# 6. Split the dataset into training data and testing data
+x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=1)
+
+# 7. Show how many rows each split contains
+print("Training and testing data sizes:")
+print("x_train:", x_train.shape)
+print("x_test:", x_test.shape)
+print("y_train:", y_train.shape)
+print("y_test:", y_test.shape)
+
+# 8. Create and train a Linear Regression model
+regressor = LinearRegression()
+regressor.fit(x_train, y_train)
+
+# 9. Show the model’s parameters
+print("\nModel Intercept:", regressor.intercept_)
+print("Model Coefficient:", regressor.coef_)
+
+# 10. Use the model to predict accident severity for the test data
+y_pred = regressor.predict(x_test)
+
+# 11. Compare predicted values with the actual values
+comparison = pd.DataFrame({'Actual': y_test, 'Predicted': y_pred})
+print("\nSample comparison of actual vs predicted:")
+print(comparison.head(20))
+
+# 12. Evaluate how well the model performed
+mae = metrics.mean_absolute_error(y_test, y_pred)
+mse = metrics.mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+
+print("\nModel Performance Metrics:")
+print("Mean Absolute Error (MAE):", mae)
+print("Mean Squared Error (MSE):", mse)
+print("Root Mean Squared Error (RMSE):", rmse)
+
+# 13. Plot the regression line across the whole dataset
+plt.figure(figsize=(8,5))
+plt.scatter(X, Y, color='blue', label='Data Points')
+plt.plot(X, regressor.predict(X), color='red', linewidth=2, label='Regression Line')
+plt.title('Linear Regression: Vehicle Speed vs Accident Severity')
+plt.xlabel('Vehicle Speed (km/h)')
+plt.ylabel('Accident Severity Level')
+plt.legend()
+plt.show()
+
+# 14. Save the trained model using both joblib and pickle
+joblib.dump(regressor, 'linear_regression_model.pkl')
+
+with open('linear_regression_model.pkl', 'wb') as file:
+    pickle.dump(regressor, file)
+
+print("\nModel has been successfully saved as 'linear_regression_model.pkl'")
+
+# 15. Load the saved model and make predictions for new speeds
+new_X = np.array([65, 75, 85]).reshape(-1, 1)
+model = joblib.load('linear_regression_model.pkl')
+predictions = model.predict(new_X)
+
+# 16. Show the predictions
+new_data = pd.DataFrame({'Vehicle_Speed': new_X.flatten(), 'Predicted_Severity': predictions})
+print("\nPredicted Accident Severity for new speeds:")
+print(new_data)
