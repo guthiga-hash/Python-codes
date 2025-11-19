@@ -1,0 +1,206 @@
+
+
+# Import all required libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+print("=" * 60)
+print("COMPLETE MACHINE LEARNING PIPELINE")
+print("=" * 60)
+
+# STEP 1: Load the Data
+print("\nSTEP 1: Loading Data...")
+# Create sample data (since we don't have the actual file)
+data = {
+    'Student_ID': ['S001', 'S002', 'S003', 'S004', 'S005', 'S006', 'S007', 'S008', 'S009', 'S010'],
+    'GPA': [3.4, 2.1, 3.8, 1.9, 2.7, 1.5, 3.0, 2.4, 3.6, 2.0],
+    'Attendance (%)': [92, 68, 95, 55, 78, 50, 85, 65, 90, 60],
+    'Failed_Courses': [0, 2, 0, 3, 1, 4, 0, 2, 0, 3],
+    'Financial_Aid': ['Yes', 'No', 'Yes', 'No', 'Yes', 'No', 'Yes', 'No', 'Yes', 'No'],
+    'Parent_Education': ['College', 'High School', 'College', 'Primary', 'High School', 'Primary', 'College', 'High School', 'College', 'Primary'],
+    'Past_Enrollments': [1, 0, 2, 0, 1, 0, 1, 0, 2, 0],
+    'Age': [19, 20, 18, 21, 19, 22, 20, 23, 18, 21],
+    'Enrollment_Likelihood': ['Enroll', 'Not Enroll', 'Enroll', 'Needs Support', 'Enroll', 'Not Enroll', 'Enroll', 'Needs Support', 'Enroll', 'Not Enroll']
+}
+
+mydata = pd.DataFrame(data)
+print(" Data loaded successfully!")
+print(f"Dataset shape: {mydata.shape}")
+print("\nFirst 5 rows:")
+print(mydata.head())
+
+# STEP 2: Prepare the Data
+print("\n" + "="*50)
+print("STEP 2: Preparing Data...")
+# Create a copy of the data
+data_prepared = mydata.copy()
+
+# Handle categorical variables using Label Encoding
+label_encoders = {}
+categorical_columns = ['Financial_Aid', 'Parent_Education', 'Enrollment_Likelihood']
+
+print("Encoding categorical variables:")
+for col in categorical_columns:
+    le = LabelEncoder()
+    data_prepared[col] = le.fit_transform(data_prepared[col])
+    label_encoders[col] = le
+    print(f"  {col}: {dict(zip(le.classes_, le.transform(le.classes_)))}")
+
+print(f"\n Data preparation completed!")
+print(f"Prepared data shape: {data_prepared.shape}")
+print("\nPrepared data preview:")
+print(data_prepared.head())
+
+# STEP 3: Define Features (X) and Target (y)
+print("\n" + "="*50)
+print("STEP 3: Defining Features and Target...")
+# We'll predict Enrollment_Likelihood based on other features
+X = data_prepared.drop(['Student_ID', 'Enrollment_Likelihood'], axis=1)
+y = data_prepared['Enrollment_Likelihood']
+
+print(" Features and target defined!")
+print(f"Features (X) shape: {X.shape}")
+print(f"Target (y) shape: {y.shape}")
+print(f"\nFeature names: {list(X.columns)}")
+print(f"Target distribution:")
+target_counts = pd.Series(y).value_counts()
+for idx, count in target_counts.items():
+    label = label_encoders['Enrollment_Likelihood'].classes_[idx]
+    print(f"  {label}: {count} samples")
+
+# STEP 4: Train/Test Split
+print("\n" + "="*50)
+print("STEP 4: Splitting Data into Train/Test Sets...")
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42, stratify=y
+)
+
+print(" Train/test split completed!")
+print(f"Training set - X: {X_train.shape}, y: {y_train.shape}")
+print(f"Testing set - X: {X_test.shape}, y: {y_test.shape}")
+
+print(f"\nTraining set target distribution:")
+train_counts = pd.Series(y_train).value_counts()
+for idx, count in train_counts.items():
+    label = label_encoders['Enrollment_Likelihood'].classes_[idx]
+    print(f"  {label}: {count} samples")
+
+print(f"Testing set target distribution:")
+test_counts = pd.Series(y_test).value_counts()
+for idx, count in test_counts.items():
+    label = label_encoders['Enrollment_Likelihood'].classes_[idx]
+    print(f"  {label}: {count} samples")
+
+# STEP 5: Train the Decision Tree Model
+print("\n" + "="*50)
+print("STEP 5: Training Decision Tree Model...")
+# Initialize and train the model
+dt_model = DecisionTreeClassifier(
+    random_state=42,
+    max_depth=3,
+    min_samples_split=2,
+    min_samples_leaf=1
+)
+dt_model.fit(X_train, y_train)
+
+print(" Model training completed!")
+print(f"Model parameters: {dt_model.get_params()}")
+print(f"Number of features used: {dt_model.n_features_in_}")
+print(f"Classes learned: {[label_encoders['Enrollment_Likelihood'].classes_[i] for i in dt_model.classes_]}")
+
+# STEP 6: Make Predictions
+print("\n" + "="*50)
+print("STEP 6: Making Predictions...")
+# Predict on training and testing data
+y_train_pred = dt_model.predict(X_train)
+y_test_pred = dt_model.predict(X_test)
+
+# Convert predictions back to original labels for interpretation
+y_test_pred_labels = label_encoders['Enrollment_Likelihood'].inverse_transform(y_test_pred)
+y_test_actual_labels = label_encoders['Enrollment_Likelihood'].inverse_transform(y_test)
+
+print(" Predictions made!")
+print(f"Test set predictions: {y_test_pred_labels}")
+print(f"Test set actual values: {y_test_actual_labels}")
+
+# Create a comparison DataFrame
+results_df = pd.DataFrame({
+    'Actual': y_test_actual_labels,
+    'Predicted': y_test_pred_labels,
+    'Correct': y_test_actual_labels == y_test_pred_labels
+})
+print("\nPrediction Results:")
+print(results_df)
+
+# STEP 7: Evaluate the Model
+print("\n" + "="*50)
+print("STEP 7: Evaluating Model Performance...")
+
+# Calculate accuracy scores
+train_accuracy = accuracy_score(y_train, y_train_pred)
+test_accuracy = accuracy_score(y_test, y_test_pred)
+
+print(" PERFORMANCE METRICS:")
+print(f"Training Accuracy: {train_accuracy:.4f} ({train_accuracy*100:.2f}%)")
+print(f"Testing Accuracy: {test_accuracy:.4f} ({test_accuracy*100:.2f}%)")
+
+# Detailed classification report
+print("\n" + "CLASSIFICATION REPORT:")
+print(classification_report(y_test, y_test_pred, 
+                          target_names=label_encoders['Enrollment_Likelihood'].classes_))
+
+# Confusion Matrix
+print(" CONFUSION MATRIX:")
+cm = confusion_matrix(y_test, y_test_pred)
+plt.figure(figsize=(8, 6))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False,
+            xticklabels=label_encoders['Enrollment_Likelihood'].classes_,
+            yticklabels=label_encoders['Enrollment_Likelihood'].classes_)
+plt.title('Confusion Matrix - Decision Tree Model', fontsize=14, fontweight='bold')
+plt.xlabel('Predicted Label', fontweight='bold')
+plt.ylabel('Actual Label', fontweight='bold')
+plt.show()
+
+# Feature Importance
+print("\n" + " FEATURE IMPORTANCE:")
+feature_importance = pd.DataFrame({
+    'Feature': X.columns,
+    'Importance': dt_model.feature_importances_
+}).sort_values('Importance', ascending=False)
+
+print(feature_importance)
+
+# Plot feature importance
+plt.figure(figsize=(10, 6))
+sns.barplot(data=feature_importance, x='Importance', y='Feature', palette='viridis')
+plt.title('Feature Importance - Decision Tree Model', fontsize=14, fontweight='bold')
+plt.xlabel('Importance Score', fontweight='bold')
+plt.xlim(0, 1)
+plt.tight_layout()
+plt.show()
+
+# FINAL SUMMARY
+print("\n" + "="*60)
+print(" MODEL TRAINING COMPLETED - SUMMARY")
+print("="*60)
+print(f" Dataset: {mydata.shape[0]} samples, {X.shape[1]} features")
+print(f" Target variable: Enrollment_Likelihood")
+print(f" Training samples: {X_train.shape[0]}")
+print(f" Testing samples: {X_test.shape[0]}")
+print(f" Final Test Accuracy: {test_accuracy:.4f} ({test_accuracy*100:.2f}%)")
+print(f" Most important feature: {feature_importance.iloc[0]['Feature']}")
+print(f" Feature importance range: {feature_importance['Importance'].min():.3f} - {feature_importance['Importance'].max():.3f}")
+
+# Check for overfitting
+if train_accuracy - test_accuracy > 0.1:
+    print("  Warning: Potential overfitting detected (large gap between train and test accuracy)")
+else:
+    print(" Good generalization: Train and test accuracy are close")
+
+print("="*60)
